@@ -1,0 +1,13 @@
+{
+  "name": "2-twojs-intro",
+  "version": "1.0.0",
+  "source": "src/index.html",
+  "scripts": {
+    "start": "parcel",
+    "build": "parcel build"
+  },
+  "dependencies": {
+    "parcel": "^2.0.0",
+    "two.js": "^0.7.8"
+  }
+}
