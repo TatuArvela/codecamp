@@ -1,0 +1,12 @@
+{
+  "name": "codecamp",
+  "version": "1.0.0",
+  "description": "Nitor Code Camp demo things",
+  "main": "index.js",
+  "author": "Tatu Arvela <tatu.arvela@nitor.com>",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "prettier": "^2.4.1"
+  }
+}
