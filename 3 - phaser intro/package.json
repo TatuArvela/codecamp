@@ -1,0 +1,13 @@
+{
+  "name": "3-phaser-intro",
+  "version": "1.0.0",
+  "source": "src/index.html",
+  "scripts": {
+    "start": "parcel",
+    "build": "parcel build"
+  },
+  "dependencies": {
+    "parcel": "^2.0.0",
+    "phaser": "^3.55.2"
+  }
+}

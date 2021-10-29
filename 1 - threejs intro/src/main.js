@@ -16,6 +16,9 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getInitialColor, rotateColor } from "./color";
 
+// Cleanup for Parcel
+document.getElementById("canvas")?.remove();
+
 let renderer;
 let scene;
 let camera;
@@ -70,8 +73,6 @@ function createPyramid() {
 }
 
 function init() {
-  document.getElementById("canvas")?.remove();
-
   renderer = new WebGLRenderer();
   renderer.domElement.id = "canvas";
   renderer.setSize(window.innerWidth, window.innerHeight);

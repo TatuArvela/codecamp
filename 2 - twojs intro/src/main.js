@@ -1,5 +1,6 @@
 import Two from "two.js";
 
+// Cleanup for Parcel
 document.querySelectorAll("svg").forEach((element) => element.remove());
 
 const two = new Two({
