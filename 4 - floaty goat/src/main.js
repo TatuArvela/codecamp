@@ -50,6 +50,10 @@ function preload() {
   this.load.image("pipe", require("./img/pipe.png"));
   this.load.image("pipe-end", require("./img/pipe-end.png"));
   this.load.image("restart", require("./img/restart.png"));
+  this.load.script(
+    "webfont",
+    "https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"
+  );
 }
 
 function createPipePair(x, gapHeight) {
@@ -154,16 +158,6 @@ function create() {
   bg.displayOriginX = 0;
   bg.displayOriginY = 0;
 
-  scoreText = this.add.text(24, 24, "Score: 0", {
-    fontSize: "32px",
-    fontFamily: '"Press Start 2P", sans-serif',
-    fill: "#fff",
-    stroke: "#000",
-    strokeThickness: 8,
-    strokeStyle: "solid",
-  });
-  scoreText.depth = 3;
-
   groundSprite = this.add.tileSprite(
     0,
     config.height - 36,
@@ -183,16 +177,33 @@ function create() {
   restartButton.depth = 4;
   restartButton.visible = false;
 
-  this.add.text(
-    20,
-    config.height - 32,
-    "Floaty Goat / Made at Nitor Code Camp 2021 / Tatu Arvela",
-    {
-      fontSize: "16px",
-      fontFamily: '"Press Start 2P", sans-serif',
-      fill: "#a17c7c",
-    }
-  );
+  WebFont.load({
+    google: {
+      families: ["Press Start 2P"],
+    },
+    active: () => {
+      scoreText = this.add.text(24, 24, "Score: 0", {
+        fontSize: "32px",
+        fontFamily: '"Press Start 2P", sans-serif',
+        fill: "#fff",
+        stroke: "#000",
+        strokeThickness: 8,
+        strokeStyle: "solid",
+      });
+      scoreText.depth = 3;
+
+      this.add.text(
+        20,
+        config.height - 32,
+        "Floaty Goat / Made at Nitor Code Camp 2021 / Tatu Arvela",
+        {
+          fontSize: "16px",
+          fontFamily: '"Press Start 2P", sans-serif',
+          fill: "#a17c7c",
+        }
+      );
+    },
+  });
 
   this.input.on("pointerup", () => {
     if (gameRunning) {
@@ -237,7 +248,7 @@ function stopAllPipes() {
 
 function setScore(newScore) {
   score = newScore;
-  scoreText.setText("Score: " + score);
+  scoreText?.setText("Score: " + score);
 }
 
 function update() {
