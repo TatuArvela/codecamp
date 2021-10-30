@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { getInitialColor, rotateColor } from "./color";
 
 // Cleanup for Parcel
 document.querySelectorAll("canvas").forEach((element) => element.remove());
@@ -10,7 +11,7 @@ const config = {
   physics: {
     default: "arcade",
     arcade: {
-      gravity: { y: 1000 },
+      gravity: { y: 1200 },
     },
   },
   collider: {},
@@ -19,10 +20,16 @@ const config = {
     create: create,
     update: update,
   },
+  pixelArt: true,
+  roundPixels: false,
+  antialias: false,
+  antialiasGL: false,
 };
 
 const SCROLL_SPEED = -200;
-const FRAMES_UNTIL_PIPE = 100;
+const FRAMES_UNTIL_PIPE = 120;
+const SPAWN_PIPES_AT = 1024;
+const GAP_SIZE = 160;
 
 let framesUntilPipe = FRAMES_UNTIL_PIPE;
 const game = new Phaser.Game(config);
@@ -30,6 +37,8 @@ let score = 0;
 let scoreText;
 let gameRunning = true;
 let goat;
+let ground;
+let restartButton;
 let pipePairs = [];
 let groundSprite;
 
@@ -40,6 +49,7 @@ function preload() {
   this.load.image("goat-jump", require("./img/goat-jump.png"));
   this.load.image("pipe", require("./img/pipe.png"));
   this.load.image("pipe-end", require("./img/pipe-end.png"));
+  this.load.image("restart", require("./img/restart.png"));
 }
 
 function createPipePair(x, gapHeight) {
@@ -102,6 +112,15 @@ function createPipePair(x, gapHeight) {
   bottomPipe.body.setVelocityX(SCROLL_SPEED);
   this.physics.add.overlap(goat, bottomPipe);
 
+  let tint = getInitialColor();
+  const changeColorInterval = setInterval(() => {
+    tint = rotateColor(tint);
+    topPipeEndSprite.tint = tint;
+    topPipeSprite.tint = tint;
+    bottomPipeEndSprite.tint = tint;
+    bottomPipeSprite.tint = tint;
+  }, 10);
+
   return {
     passed: false,
     getX: () => topPipe.x,
@@ -110,6 +129,7 @@ function createPipePair(x, gapHeight) {
       topPipeSprite.destroy();
       bottomPipeEndSprite.destroy();
       bottomPipeSprite.destroy();
+      clearInterval(changeColorInterval);
     },
     stop: () => {
       topPipeEndSprite.body.setVelocityX(0);
@@ -120,22 +140,29 @@ function createPipePair(x, gapHeight) {
   };
 }
 
+function initGoat() {
+  goat = this.physics.add.sprite(config.width / 4, config.height / 3, "goat");
+  goat.body.setSize(48, 48);
+  goat.depth = 2;
+  goat.body.mass = 1000;
+  goat.setCollideWorldBounds(true);
+  this.physics.add.collider(goat, ground);
+}
+
 function create() {
   const bg = this.add.image(0, 0, "bg");
   bg.displayOriginX = 0;
   bg.displayOriginY = 0;
 
-  scoreText = this.add.text(16, 16, "Score: 0", {
+  scoreText = this.add.text(24, 24, "Score: 0", {
     fontSize: "32px",
-    fontFamily: "sans-serif",
-    fill: "#000",
+    fontFamily: '"Press Start 2P", sans-serif',
+    fill: "#fff",
+    stroke: "#000",
+    strokeThickness: 8,
+    strokeStyle: "solid",
   });
   scoreText.depth = 3;
-
-  goat = this.physics.add.sprite(config.width / 4, config.height / 3, "goat");
-  goat.depth = 2;
-  goat.body.mass = 1000;
-  goat.setCollideWorldBounds(true);
 
   groundSprite = this.add.tileSprite(
     0,
@@ -144,27 +171,73 @@ function create() {
     72,
     "ground"
   );
-  const ground = this.physics.add.existing(groundSprite, true);
+  ground = this.physics.add.existing(groundSprite, true);
 
-  this.add.text(16, config.height - 40, "Floaty Goat", {
-    fontSize: "24px",
-    fontFamily: "sans-serif",
-    fill: "#000",
-  });
+  initGoat.bind(this)();
 
-  this.physics.add.collider(goat, ground);
+  restartButton = this.add.image(
+    config.width / 2,
+    config.height / 2,
+    "restart"
+  );
+  restartButton.depth = 4;
+  restartButton.visible = false;
 
-  this.input.on("pointerup", function () {
+  this.add.text(
+    20,
+    config.height - 32,
+    "Floaty Goat / Made at Nitor Code Camp 2021 / Tatu Arvela",
+    {
+      fontSize: "16px",
+      fontFamily: '"Press Start 2P", sans-serif',
+      fill: "#a17c7c",
+    }
+  );
+
+  this.input.on("pointerup", () => {
     if (gameRunning) {
       goat.body.setVelocityY(-350);
+    } else {
+      restartGame.bind(this)();
     }
   });
+  this.input.keyboard.on("keydown-SPACE", () => {
+    if (gameRunning) {
+      goat.body.setVelocityY(-350);
+    } else {
+      restartGame.bind(this)();
+    }
+  });
+  this.input.keyboard.on("keydown-R", () => restartGame.bind(this)());
+}
+
+function endGame() {
+  goat.angle = 45;
+  stopAllPipes();
+  gameRunning = false;
+  restartButton.visible = true;
+}
+
+function restartGame() {
+  restartButton.visible = false;
+  setScore(0);
+  goat.body.destroy();
+  goat.destroy();
+  initGoat.bind(this)();
+  pipePairs.forEach((pipe) => pipe.remove());
+  pipePairs = [];
+  gameRunning = true;
 }
 
 function stopAllPipes() {
   pipePairs.forEach((pipe) => {
     pipe.stop();
   });
+}
+
+function setScore(newScore) {
+  score = newScore;
+  scoreText.setText("Score: " + score);
 }
 
 function update() {
@@ -182,22 +255,19 @@ function update() {
     }
 
     if (!goat.body.touching.none) {
-      goat.angle = 45;
-      stopAllPipes();
-      gameRunning = false;
+      endGame();
     }
 
     framesUntilPipe--;
     if (framesUntilPipe === 0) {
-      pipePairs.push(createPipePair.bind(this)(1200, 200));
+      pipePairs.push(createPipePair.bind(this)(SPAWN_PIPES_AT, GAP_SIZE));
       framesUntilPipe = FRAMES_UNTIL_PIPE;
     }
 
     pipePairs.forEach((pipe, index) => {
       if (!pipe.passed && pipe.getX() < goat.x) {
         pipe.passed = true;
-        score++;
-        scoreText.setText("Score: " + score);
+        setScore(score + 1);
       }
       if (pipe.getX() < -64) {
         pipe.remove();
