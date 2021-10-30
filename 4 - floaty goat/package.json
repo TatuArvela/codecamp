@@ -4,7 +4,7 @@
   "source": "src/index.html",
   "scripts": {
     "start": "parcel",
-    "build": "parcel build --dist-dir ../docs"
+    "build": "parcel build --dist-dir ../docs --public-url ./"
   },
   "dependencies": {
     "parcel": "^2.0.0",
