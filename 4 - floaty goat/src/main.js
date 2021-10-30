@@ -10,7 +10,7 @@ const config = {
   physics: {
     default: "arcade",
     arcade: {
-      gravity: { y: 500 },
+      gravity: { y: 1000 },
     },
   },
   collider: {},
@@ -21,11 +21,17 @@ const config = {
   },
 };
 
+const SCROLL_SPEED = -200;
+const FRAMES_UNTIL_PIPE = 100;
+
+let framesUntilPipe = FRAMES_UNTIL_PIPE;
 const game = new Phaser.Game(config);
+let score = 0;
+let scoreText;
+let gameRunning = true;
 let goat;
 let pipePairs = [];
 let groundSprite;
-let framesUntilPipe = 100;
 
 function preload() {
   this.load.image("bg", require("./img/bg.png"));
@@ -47,53 +53,71 @@ function createPipePair(x, gapHeight) {
     groundHeight +
     1; // This 1 is needed for some reason to make the graphics pixel perfect
   const topPipeHeight = Math.floor(Math.random() * totalPipeHeight);
-
-  const topPipeEnd = this.add.sprite(x, topPipeHeight, "pipe-end");
-  topPipeEnd.displayOriginX = 0;
-  topPipeEnd.displayOriginY = 0;
-  topPipeEnd.flipY = true;
-
-  const topPipe = this.add.tileSprite(x, 0, 64, topPipeHeight, "pipe");
-  topPipe.displayOriginX = 0;
-  topPipe.displayOriginY = 0;
-
   const bottomPipeHeight = totalPipeHeight - topPipeHeight;
-
   const bottomY =
     config.height - pipeEndHeight - bottomPipeHeight - groundHeight;
 
-  const bottomPipeEnd = this.add.sprite(x, bottomY, "pipe-end");
-  bottomPipeEnd.displayOriginX = 0;
-  bottomPipeEnd.displayOriginY = 0;
+  const topPipeEndSprite = this.physics.add.sprite(
+    x,
+    topPipeHeight,
+    "pipe-end"
+  );
+  topPipeEndSprite.displayOriginX = 0;
+  topPipeEndSprite.displayOriginY = 0;
+  topPipeEndSprite.flipY = true;
+  topPipeEndSprite.body.setAllowGravity(false);
+  topPipeEndSprite.body.setImmovable(true);
+  topPipeEndSprite.body.setVelocityX(SCROLL_SPEED);
+  this.physics.add.overlap(goat, topPipeEndSprite);
 
-  const bottomPipe = this.add.tileSprite(
+  const topPipeSprite = this.add.tileSprite(x, 0, 64, topPipeHeight, "pipe");
+  topPipeSprite.displayOriginX = 0;
+  topPipeSprite.displayOriginY = 0;
+  const topPipe = this.physics.add.existing(topPipeSprite);
+  topPipe.body.setAllowGravity(false);
+  topPipe.body.setImmovable(true);
+  topPipe.body.setVelocityX(SCROLL_SPEED);
+  this.physics.add.overlap(goat, topPipe);
+
+  const bottomPipeEndSprite = this.physics.add.sprite(x, bottomY, "pipe-end");
+  bottomPipeEndSprite.displayOriginX = 0;
+  bottomPipeEndSprite.displayOriginY = 0;
+  bottomPipeEndSprite.body.setAllowGravity(false);
+  bottomPipeEndSprite.body.setImmovable(true);
+  bottomPipeEndSprite.body.setVelocityX(SCROLL_SPEED);
+  this.physics.add.overlap(goat, bottomPipeEndSprite);
+
+  const bottomPipeSprite = this.add.tileSprite(
     x,
     bottomY + pipeEndHeight,
     64,
     bottomPipeHeight,
     "pipe"
   );
-  bottomPipe.displayOriginX = 0;
-  bottomPipe.displayOriginY = 0;
+  bottomPipeSprite.displayOriginX = 0;
+  bottomPipeSprite.displayOriginY = 0;
+  const bottomPipe = this.physics.add.existing(bottomPipeSprite);
+  bottomPipe.body.setAllowGravity(false);
+  bottomPipe.body.setImmovable(true);
+  bottomPipe.body.setVelocityX(SCROLL_SPEED);
+  this.physics.add.overlap(goat, bottomPipe);
 
   return {
+    passed: false,
     getX: () => topPipe.x,
-    setX: (x) => {
-      topPipeEnd.setX(x);
-      topPipe.setX(x);
-      bottomPipeEnd.setX(x);
-      bottomPipe.setX(x);
+    remove: () => {
+      topPipeEndSprite.destroy();
+      topPipeSprite.destroy();
+      bottomPipeEndSprite.destroy();
+      bottomPipeSprite.destroy();
+    },
+    stop: () => {
+      topPipeEndSprite.body.setVelocityX(0);
+      topPipe.body.setVelocityX(0);
+      bottomPipeEndSprite.body.setVelocityX(0);
+      bottomPipe.body.setVelocityX(0);
     },
   };
-
-  // const pipeGroup = this.add.physics.container(x, bottomY, [
-  //   topPipeEnd,
-  //   topPipe,
-  //   bottomPipeEnd,
-  //   bottomPipe,
-  // ]);
-  //
-  // return pipeGroup;
 }
 
 function create() {
@@ -101,9 +125,16 @@ function create() {
   bg.displayOriginX = 0;
   bg.displayOriginY = 0;
 
+  scoreText = this.add.text(16, 16, "Score: 0", {
+    fontSize: "32px",
+    fontFamily: "sans-serif",
+    fill: "#000",
+  });
+  scoreText.depth = 3;
+
   goat = this.physics.add.sprite(config.width / 4, config.height / 3, "goat");
-  goat.setVelocity(0, 100);
-  goat.setBounce(1, 1);
+  goat.depth = 2;
+  goat.body.mass = 1000;
   goat.setCollideWorldBounds(true);
 
   groundSprite = this.add.tileSprite(
@@ -115,25 +146,65 @@ function create() {
   );
   const ground = this.physics.add.existing(groundSprite, true);
 
-  pipePairs.push(createPipePair.bind(this)(1200, 100));
+  this.add.text(16, config.height - 40, "Floaty Goat", {
+    fontSize: "24px",
+    fontFamily: "sans-serif",
+    fill: "#000",
+  });
 
   this.physics.add.collider(goat, ground);
-  //this.physics.add.collider(goat, pipe);
+
+  this.input.on("pointerup", function () {
+    if (gameRunning) {
+      goat.body.setVelocityY(-350);
+    }
+  });
+}
+
+function stopAllPipes() {
+  pipePairs.forEach((pipe) => {
+    pipe.stop();
+  });
 }
 
 function update() {
-  if (goat.body.velocity.y < 0) {
-    goat.setTexture("goat-jump");
-  } else {
-    goat.setTexture("goat");
-  }
+  if (gameRunning) {
+    if (goat.body.velocity.y < 0) {
+      goat.setTexture("goat-jump");
+      goat.angle = -15;
+    } else {
+      goat.setTexture("goat");
+      if (goat.body.velocity.y > 200) {
+        goat.angle = 15;
+      } else {
+        goat.angle = 0;
+      }
+    }
 
-  framesUntilPipe--;
-  if (framesUntilPipe === 0) {
-    pipePairs.push(createPipePair.bind(this)(1200, 100));
-    framesUntilPipe = 100;
-  }
+    if (!goat.body.touching.none) {
+      goat.angle = 45;
+      stopAllPipes();
+      gameRunning = false;
+    }
 
-  pipePairs.forEach((pipePair) => pipePair.setX(pipePair.getX() - 5));
-  groundSprite.tilePositionX += 5;
+    framesUntilPipe--;
+    if (framesUntilPipe === 0) {
+      pipePairs.push(createPipePair.bind(this)(1200, 200));
+      framesUntilPipe = FRAMES_UNTIL_PIPE;
+    }
+
+    pipePairs.forEach((pipe, index) => {
+      if (!pipe.passed && pipe.getX() < goat.x) {
+        pipe.passed = true;
+        score++;
+        scoreText.setText("Score: " + score);
+      }
+      if (pipe.getX() < -64) {
+        pipe.remove();
+        pipePairs.splice(index, 1);
+      }
+    });
+
+    groundSprite.tilePositionX -= SCROLL_SPEED / 60;
+  }
 }
