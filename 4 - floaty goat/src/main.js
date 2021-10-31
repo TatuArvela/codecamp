@@ -4,6 +4,7 @@ import { getInitialColor, rotateColor } from "./color";
 // Cleanup for Parcel
 document.querySelectorAll("canvas").forEach((element) => element.remove());
 
+const localStorage = window.localStorage;
 const config = {
   type: Phaser.AUTO,
   width: 1024,
@@ -35,6 +36,8 @@ let framesUntilPipe = FRAMES_UNTIL_PIPE;
 const game = new Phaser.Game(config);
 let score = 0;
 let scoreText;
+let hiscore = localStorage.getItem("hiscore") || 0;
+let hiscoreText;
 let gameRunning = true;
 let goat;
 let ground;
@@ -182,7 +185,7 @@ function create() {
       families: ["Press Start 2P"],
     },
     active: () => {
-      scoreText = this.add.text(24, 24, "Score: 0", {
+      scoreText = this.add.text(24, 24, "Score: " + score, {
         fontSize: "32px",
         fontFamily: '"Press Start 2P", sans-serif',
         fill: "#fff",
@@ -191,6 +194,21 @@ function create() {
         strokeStyle: "solid",
       });
       scoreText.depth = 3;
+
+      hiscoreText = this.add.text(
+        config.width / 2 + 24,
+        24,
+        "Hiscore: " + hiscore,
+        {
+          fontSize: "32px",
+          fontFamily: '"Press Start 2P", sans-serif',
+          fill: "#fff",
+          stroke: "#000",
+          strokeThickness: 8,
+          strokeStyle: "solid",
+        }
+      );
+      hiscoreText.depth = 3;
 
       this.add.text(
         20,
@@ -247,7 +265,12 @@ function stopAllPipes() {
 }
 
 function setScore(newScore) {
+  if (newScore > hiscore) {
+    hiscore = newScore;
+    localStorage.setItem("hiscore", hiscore);
+  }
   score = newScore;
+  hiscoreText?.setText("Hiscore: " + hiscore);
   scoreText?.setText("Score: " + score);
 }
 
