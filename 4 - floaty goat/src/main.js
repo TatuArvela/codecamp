@@ -289,7 +289,7 @@ function update() {
     }
 
     if (!goat.body.touching.none) {
-      endGame();
+      return endGame();
     }
 
     framesUntilPipe--;
