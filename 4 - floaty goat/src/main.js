@@ -5,6 +5,7 @@ import { getInitialColor, rotateColor } from "./color";
 document.querySelectorAll("canvas").forEach((element) => element.remove());
 
 const localStorage = window.localStorage;
+const FPS = 60;
 const config = {
   type: Phaser.AUTO,
   width: 1024,
@@ -13,6 +14,7 @@ const config = {
     default: "arcade",
     arcade: {
       gravity: { y: 1200 },
+      fps: FPS,
     },
   },
   collider: {},
@@ -28,11 +30,11 @@ const config = {
 };
 
 const SCROLL_SPEED = -200;
-const FRAMES_UNTIL_PIPE = 120;
+const PIPE_RATE = 2000; // milliseconds
 const SPAWN_PIPES_AT = 1024;
 const GAP_SIZE = 160;
 
-let framesUntilPipe = FRAMES_UNTIL_PIPE;
+let timeFromLastPipe = 0;
 const game = new Phaser.Game(config);
 let score = 0;
 let scoreText;
@@ -46,6 +48,7 @@ let pipePairs = [];
 let groundSprite;
 
 function preload() {
+  this.game.advancedTiming = true;
   this.load.image("bg", require("./img/bg.png"));
   this.load.image("ground", require("./img/ground.png"));
   this.load.image("goat", require("./img/goat.png"));
@@ -274,7 +277,7 @@ function setScore(newScore) {
   scoreText?.setText("Score: " + score);
 }
 
-function update() {
+function update(time, delta) {
   if (gameRunning) {
     if (goat.body.velocity.y < 0) {
       goat.setTexture("goat-jump");
@@ -292,10 +295,10 @@ function update() {
       return endGame();
     }
 
-    framesUntilPipe--;
-    if (framesUntilPipe === 0) {
+    timeFromLastPipe += delta;
+    if (timeFromLastPipe >= PIPE_RATE) {
+      timeFromLastPipe = 0;
       pipePairs.push(createPipePair.bind(this)(SPAWN_PIPES_AT, GAP_SIZE));
-      framesUntilPipe = FRAMES_UNTIL_PIPE;
     }
 
     pipePairs.forEach((pipe, index) => {
@@ -308,7 +311,6 @@ function update() {
         pipePairs.splice(index, 1);
       }
     });
-
-    groundSprite.tilePositionX -= SCROLL_SPEED / 60;
+    groundSprite.tilePositionX -= SCROLL_SPEED / FPS;
   }
 }
