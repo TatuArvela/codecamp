@@ -42,10 +42,11 @@ let hiscore = localStorage.getItem("hiscore") || 0;
 let hiscoreText;
 let gameRunning = true;
 let goat;
-let ground;
 let restartButton;
 let pipePairs = [];
+let ground;
 let groundSprite;
+let groundDummy;
 
 function preload() {
   this.game.advancedTiming = true;
@@ -163,6 +164,10 @@ function create() {
   const bg = this.add.image(0, 0, "bg");
   bg.displayOriginX = 0;
   bg.displayOriginY = 0;
+
+  // This is a bit silly, I wonder if arcade physics provides anything else I could use on each update
+  groundDummy = this.physics.add.sprite(0, config.height, "ground");
+  groundDummy.body.setVelocityX(SCROLL_SPEED);
 
   groundSprite = this.add.tileSprite(
     0,
@@ -311,6 +316,7 @@ function update(time, delta) {
         pipePairs.splice(index, 1);
       }
     });
-    groundSprite.tilePositionX -= SCROLL_SPEED / FPS;
+
+    groundSprite.tilePositionX = -groundDummy.x;
   }
 }
