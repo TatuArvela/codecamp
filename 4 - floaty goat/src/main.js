@@ -8,8 +8,8 @@ const localStorage = window.localStorage;
 const FPS = 60;
 const config = {
   type: Phaser.AUTO,
-  width: 1024,
-  height: 768,
+  width: 600,
+  height: 960,
   physics: {
     default: "arcade",
     arcade: {
@@ -29,9 +29,9 @@ const config = {
   antialiasGL: false,
 };
 
-const SCROLL_SPEED = -200;
-const PIPE_RATE = 2000; // milliseconds
-const SPAWN_PIPES_AT = 1024;
+const SCROLL_SPEED = -120;
+const PIPE_RATE = 3000; // milliseconds
+const SPAWN_PIPES_AT = 600;
 const GAP_SIZE = 160;
 
 let timeFromLastPipe = 0;
@@ -162,6 +162,7 @@ function initGoat() {
 
 function create() {
   const bg = this.add.image(0, 0, "bg");
+  bg.setDisplaySize(config.width, config.height);
   bg.displayOriginX = 0;
   bg.displayOriginY = 0;
 
@@ -194,7 +195,7 @@ function create() {
     },
     active: () => {
       scoreText = this.add.text(24, 24, "Score: " + score, {
-        fontSize: "32px",
+        fontSize: "28px",
         fontFamily: '"Press Start 2P", sans-serif',
         fill: "#fff",
         stroke: "#000",
@@ -203,27 +204,27 @@ function create() {
       });
       scoreText.depth = 3;
 
-      hiscoreText = this.add.text(
-        config.width / 2 + 24,
-        24,
-        "Hiscore: " + hiscore,
-        {
-          fontSize: "32px",
-          fontFamily: '"Press Start 2P", sans-serif',
-          fill: "#fff",
-          stroke: "#000",
-          strokeThickness: 8,
-          strokeStyle: "solid",
-        }
-      );
+      hiscoreText = this.add.text(24, 74, "Hiscore: " + hiscore, {
+        fontSize: "28px",
+        fontFamily: '"Press Start 2P", sans-serif',
+        fill: "#fff",
+        stroke: "#000",
+        strokeThickness: 8,
+        strokeStyle: "solid",
+      });
       hiscoreText.depth = 3;
 
+      this.add.text(20, config.height - 42, "Floaty Goat", {
+        fontSize: "11px",
+        fontFamily: '"Press Start 2P", sans-serif',
+        fill: "#a17c7c",
+      });
       this.add.text(
         20,
-        config.height - 32,
-        "Floaty Goat / Made at Nitor Code Camp 2021 / Tatu Arvela",
+        config.height - 22,
+        "Made at Nitor Code Camp 2021 / Tatu Arvela",
         {
-          fontSize: "16px",
+          fontSize: "11px",
           fontFamily: '"Press Start 2P", sans-serif',
           fill: "#a17c7c",
         }

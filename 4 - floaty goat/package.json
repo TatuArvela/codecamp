@@ -4,10 +4,12 @@
   "source": "src/index.html",
   "scripts": {
     "start": "parcel",
+    "clean": "rimraf ../docs",
     "build": "parcel build --dist-dir ../docs --public-url ./"
   },
   "dependencies": {
     "parcel": "^2.0.0",
-    "phaser": "^3.55.2"
+    "phaser": "^3.55.2",
+    "rimraf": "^3.0.2"
   }
 }
